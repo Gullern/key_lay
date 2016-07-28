@@ -1,0 +1,37 @@
+# gitignore
+
+## Development
+env/
+
+## Distribution
+bin/
+build/
+dist/
+*.egg
+*.egg-info/
+
+## Compiles
+*.o
+*.mod
+
+## Builds
+*.exe
+*.out
+
+## Python byte code
+*.pyc
+
+## Data files
+*.dat
+*.log
+*.dot
+
+## Media files
+*.png
+
+## Temporary files
+*.swp
+
+## Custom config files
+.init
+.structure
