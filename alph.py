@@ -1,5 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+######## Todo #########
+# - Distance
+# - Bad sequences
+# - Shift
+#######################
+
+
 # Imports
 from itertools import compress
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 # Config
@@ -136,7 +148,7 @@ for language in languages:
 
         # Finger stats
         dict_increment(language, 'finger_freq', finger_new)
-        if (finger_new != finger_current):
+        if (finger_new != finger_current and finger_length > 0):
             dict_increment(language, 'finger_length_freq', finger_current, finger_length)
             finger_length = 1
         elif (previous_char != char):
@@ -145,7 +157,7 @@ for language in languages:
 
         # Hands stats
         dict_increment(language, 'hand_freq', hand_new)
-        if (hand_new != hand_current):
+        if (hand_new != hand_current and hand_length > 0):
             dict_increment(language, 'hand_length_freq', hand_current, hand_length)
             hand_length = 1
         else:
@@ -168,12 +180,12 @@ for language in languages:
         hand_current = hand_new
 
 for language in languages:
-    print('============' + language + '=============')
+    print('============ ' + language + ' ============')
     for stats in counters[language]:
         print(stats)
         print(counters[language][stats])
         print()
-    print('===============================')
+    print('=' * (2 * 13 + len(language)))
 
 """
 same_finger_count = 0
@@ -184,4 +196,101 @@ for i in finger_length_freq:
 print(same_finger_count)
 """
 
+fig_sizes = {
+             'char_freq': (15,6),
+             'word_length_freq': (8,6),
+             'hand_freq': (8,6),
+             'finger_freq': (10,7),
+             'hand_length_freq': (18,7),
+             'finger_length_freq': (30,18),
+             'rolls': (10,10)
+            }
 
+
+def plot_bar(figure_num, stats_string, multiple = False, num_levels = 0):
+    """ Make a bar plot of the counter specified with stats_string 
+    
+    :param multiple: Whether a plot should be made for each language or not
+    :param num_levels: The number of levels of dictionaries from which to extract the data from
+    
+    """
+    plt.figure(num = figure_num, figsize = fig_sizes[stats_string], dpi = 100, facecolor = 'w', edgecolor = 'k')
+    #fig, ax = plt.subplots()
+    dict = counters[list(counters)[0]][stats_string]
+    plt.title(stats_string)
+    if (not multiple):
+        width = 0.4
+        plt.bar(range(len(dict)), [tuple[1] for tuple in sorted(dict.items())], width = width, align = 'center')
+        plt.xticks(range(len(dict)), sorted(dict.keys()))
+        """ Sort on keys """
+    else:
+        length = len(languages)
+        for l in range(num_levels):
+            length *= len(dict)
+            dict = dict[list(dict)[0]]
+        indent = (length - 1) / 2
+        
+        # Generate flattened list of all leaf-level frequency data with recursive dictionary structure as label
+        data_list = []
+        for language in languages:
+            queue = [(language, item) for item in sorted(counters[language][stats_string].items())]
+            for level in range(num_levels):
+                current_length = len(queue)
+                for j in range(current_length):
+                    element = queue.pop(0)
+                    items = sorted(element[1][1].items())
+                    for item in items:
+                        queue.append((element[0] + '/' + element[1][0], (item[0], item[1])))
+            data_list += queue
+
+        # Regroup list
+        all_x_values = {}
+        processed_list = [('', [])]
+        for element in data_list:
+            all_x_values[element[1][0]] = 1
+            if (element[0] == processed_list[-1][0]):
+                processed_list[-1][1].append(element[1])
+            else:
+                processed_list.append((element[0], [element[1]]))
+        processed_list = processed_list[1:]
+
+        # Syncronize x-values by padding
+        all_x_values = sorted(list(all_x_values))
+        num_x_values = len(all_x_values)
+        #if () # TODO: typeof int -> pad extra
+
+        for element in processed_list:
+            for i, x in enumerate(all_x_values):
+                if (len(element[1]) <= i or element[1][i][0] != x):
+                    element[1].insert(i, (x, 0))
+        #print(processed_list)
+        
+        # Make bar plot of the data
+        x_array = range(num_x_values)
+        prop_iter = iter(plt.rcParams['axes.prop_cycle'])
+        plt.xticks(range(len(dict)), sorted(dict.keys()))
+        width = 0.75/ len(processed_list)
+        for i, element in enumerate(processed_list):
+            while True:
+                try:
+                    plt.bar([x + width * (i - indent) for x in x_array], [tuple[1] for tuple in element[1]], width = width, align = 'center', color = next(prop_iter)['color'])
+                except StopIteration:
+                    prop_iter = iter(plt.rcParams['axes.prop_cycle'])
+                    continue;
+                break;
+                
+        plt.legend([element[0] for element in processed_list])
+
+    plt.savefig(stats_string)
+
+
+print(counters['qwerty']['hand_length_freq'])
+
+figure_num = 0
+plot_bar(figure_num, 'char_freq'); figure_num += 1
+plot_bar(figure_num, 'word_length_freq'); figure_num += 1
+plot_bar(figure_num, 'hand_freq', multiple = True); figure_num += 1
+plot_bar(figure_num, 'finger_freq', multiple = True); figure_num += 1
+plot_bar(figure_num, 'hand_length_freq', multiple = True, num_levels = 1); figure_num += 1
+plot_bar(figure_num, 'finger_length_freq', multiple = True, num_levels = 1); figure_num += 1
+plot_bar(figure_num, 'rolls', multiple = True, num_levels = 1)
