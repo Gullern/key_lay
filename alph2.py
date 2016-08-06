@@ -4,18 +4,25 @@
 ######## Todo #########
 # - Distance
 # - Bad sequences
-# - Shift
 #######################
 
 # Imports
 from itertools import compress
 import numpy as np
 import matplotlib.pyplot as plt
+import codecs
 
 
 ########## Config ##########
 space_hand = 'r'
 termination_symbols = ' ,.?!:;'
+special_chars = { 
+                 char: special for special, char in 
+                        [(u'`', char) for char in [u'à',u'è',u'ì',u'ò',u'ù',u'À',u'È',u'Ì',u'Ò',u'Ù']]
+                      + [(u'´', char) for char in [u'á',u'é',u'í',u'ó',u'ú',u'ý',u'Á',u'É',u'Í',u'Ó',u'Ú',u'Ý']]
+                      + [(u'¨', char) for char in [u'ä',u'ë',u'ï',u'ö',u'ü',u'Ä',u'Ë',u'Ï',u'Ö',u'Ü']]
+                }
+
 physical_finger_placement = {
                              'l4': ('1100000000000', '100000000000', '100000000000', '11000000000'),
                              'l3': ('0010000000000', '010000000000', '010000000000', '00100000000'),
@@ -29,13 +36,23 @@ physical_finger_placement = {
 
 shift_key_distance_multiplier = 2.0
 column_row_offset = [0,1,1,0]
-distance_matrix = [[5.0,5.0,4.0,4.0,4.0,3.5,4.5,4.0,4.0,4.0,4.0,4.0,4.5],
-                   [2.0,2.0,2.0,2.0,2.5,3.0,2.0,2.0,2.0,2.0,2.5,4.0],
-                   [0.0,0.0,0.0,0.0,2.0,2.0,0.0,0.0,0.0,0.0,2.0,4.0],
-                   [3.0,2.0,2.0,2.0,2.0,3.5,2.0,2.0,2.0,2.0,2.0]
+distance_matrix = [
+                   [5.0,5.0,4.0,4.0,4.0,3.5,4.5,4.0,4.0,4.0,4.0,4.0,4.5],
+                         [2.0,2.0,2.0,2.0,2.5,3.0,2.0,2.0,2.0,2.0,2.5,4.0],
+                          [0.0,0.0,0.0,0.0,2.0,2.0,0.0,0.0,0.0,0.0,2.0,4.0],
+                       [3.0,2.0,2.0,2.0,2.0,3.5,2.0,2.0,2.0,2.0,2.0]
                   ]
 
-language = [['|', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '\\'], ['§', '!', '"', '#', '¤', '%', '&', '/', '(', ')', '=', '?', '`'], ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'å', '¨'], ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Å', '^'], ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ø', 'æ', "'"], ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ø', 'Æ', '*'], ['<', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-'], ['>', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ';', ':', '_']]
+language = [
+            ['|', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '\\'], 
+            ['§', '!', '"', '#', '¤', '%', '&', '/', '(', ')', '=', '?', '`'], 
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'å', '¨'], 
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Å', '^'], 
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ø', 'æ', "'"], 
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ø', 'Æ', '*'], 
+            ['<', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-'], 
+            ['>', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ';', ':', '_']
+           ]
 
 
 ########## Generate lookup tables ##########
@@ -103,7 +120,7 @@ def get_roll_direction(index_list):
 
 ########## Begin ##########
 # Read file
-f = open('input.txt', 'r')
+f = codecs.open('input.txt', encoding='utf-8')
 text = f.read();
 
 # Buffers and counters
@@ -116,6 +133,10 @@ previous_char = ''
 
 
 for char in text:
+    # Convert special characters
+    if (char in special_chars):
+        char = special_chars[char]
+
     # Get current finger and hand
     finger_new = char_2_finger.get(char, 'n')
     hand_new = finger_new[0]
